@@ -1,7 +1,7 @@
-# Лабораторная работа 8
-## Знакомство с брокерами сообщений
+# Лабораторная работа 7
+## Знакомство с объектными хранилищами
 ### Цель работы
-Познакомиться с процессом асинхронного взаимодействия между отдельными сервисами посредством брокеров сообщений на примере RabbitMQ
+Познакомиться с процессом сохранения файлов на примере S3 совместимого хранилища, познакомиться с передачей файлов посредством Stream'ов
 
 ### Технические требования:
 - Наличие интернет-соединения
@@ -13,121 +13,150 @@
 
 1. В директории с лабораторной работой выполните запуск контейнеров при помощи команды `docker-compose up -d` (`docker compose up -d`)
 
-2. В директории `api` выполните установку зависимостей при комощи команды `npm i`
+2. В директории с лабораторной работой выполните установку зависимостей при комощи команды `npm i`
 
-3. В директории  `greeting_service` выполните установку зависимостей при комощи команды `npm i`
+3. Сконфигурируйте MinIO для дальнейшей работы
 
-3. Перейдите в RabbitQMRabbitMQ Management из браузера [по следующему адресу](http://localhost:8080/)
-![](https://storage.yandexcloud.net/shesterikov/WP/WP_8_1.png)
+- При помощи веб-конфигуратора
+
+  a. Перейдите в веб-конфигуратор из браузера [по следующему адресу](http://localhost:9001)
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_1.png)
 Для входа используете данные из файла `docker-compose.yml`
 По умолчанию
 ```
-username: student
-password: FbgTrFGv
-```
-![](https://storage.yandexcloud.net/shesterikov/WP/WP_8_2.png)
-
-4. Перейдите в RabbitQMRabbitMQ Management / Channels из браузера [по следующему адресу](http://localhost:8080/#/channels)
-![](https://storage.yandexcloud.net/shesterikov/WP/WP_8_3.png)
-
-Убедитесь в отсутствии активных подключений
-
-5. Перейдите в RabbitQMRabbitMQ Management / Queue and Streams из браузера [по следующему адресу](http://localhost:8080/#/queues)
-![](https://storage.yandexcloud.net/shesterikov/WP/WP_8_4.png)
-
-Убедитесь в отсутствии существующих очередей
-
-6. Выполните запуск сервиса `api` из командной строки при помощи команды `npm run start:dev`
-
-7. Выполните запуск сервиса `greeting_service` из командной строки при помощи команды `npm run start:dev`
-
-8. Выполните cURL запрос в Postman или Insomnia
-
-```
-curl --location 'localhost:3000/register' \
---header 'Content-Type: application/json' \
---data '{
-    "username": "wefwefwefef",
-    "password": "wefwefwefwefwefwefwefewf1"
-}'
+username: admin
+password: 123123vv
 ```
 
-9. Убедитесь в корректной передаче данных между сервисами. 
+  b. Создайте Bucket `storage` в разделе [Object Browser](http://localhost:9001/browser) с помощью кнопки `Create bucket`
 
-В логах сервиса `api` в случае успеха можно наблюдать строку
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_2.png)
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_3.png)
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_4.png)
 
-```
-Sending information: {"username":"wefwefwefef","password":"wefwefwefwefwefwefwefewf1"} to the queue: greetings 
-```
+  c. В разделе [Access Keys](http://localhost:9001/access-keys) создайте новый ключ доступа
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_5.png)
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_6.png)
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_7.png)
 
-В логах сервиса `greeting_service` в случае успеха можно наблюдать строку
+  d. Модифицируйте файл `src/file/file.service.js` с учетом полученных `Access Key` и `Secret Key` 
 
-```
-Receiving information: {"username":"wefwefwefef","password":"wefwefwefwefwefwefwefewf1"} from the queue: greetings 
-```
+  e. Добавьте новый регион `ru-rnd-1` в разделе [MinIO Configuration](http://localhost:9001/settings/configurations/region) и выполните перезапуск хранилища
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_7.png)
 
-В RabbitQMRabbitMQ Management / Channels можно наблюдать два новых подключения
+4. В директории с лабораторной работой выполните запуск проекта с помощью команды `npm run start:dev`
 
-![](https://storage.yandexcloud.net/shesterikov/WP/WP_8_5.png)
-
-В RabbitQMRabbitMQ Management / Queue and Streams можно наблюдать новую очередь `greetings`
-
-![](https://storage.yandexcloud.net/shesterikov/WP/WP_8_6.png)
-
-
-10. Остановите сервис `greeting_service`
-
-В случае успеха в RabbitQMRabbitMQ Management / Channels можно наблюдать одно  подключение
-
-11. Выполните повторную отправку cURL запроса
+5. Выполните следующий запрос в Postman или Insomnia для подгрузки нового файла. Обратите внимание, путь к файлу может отличаться, равно как и его название
 
 ```
-curl --location 'localhost:3000/register' \
---header 'Content-Type: application/json' \
---data '{
-    "username": "wefwefwefef",
-    "password": "wefwefwefwefwefwefwefewf1"
-}'
+curl --location 'localhost:3000/files' \
+--form 'file=@"/Users/dmitry/Downloads/openapi.yaml"'
 ```
 
-12. Убедитесь в наличии недоставленных сообщений в очереди `greetings`
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_9.png)
 
-![](https://storage.yandexcloud.net/shesterikov/WP/WP_8_7.png)
+В результате запроса будет выведена метаинформация о файле, полученная из MinIO. В дальнейшем часть данной информации должна быть сохранена в соответствующей модели в СУБД PostgreSQL
 
-13. Выполните запуск сервиса `greeting_service` из командной строки при помощи команды `npm run start:dev`
-
-В логах сервиса `greeting_service` в случае успеха можно наблюдать строку
-
+Пример JSON с ответом сервера приведен ниже
 ```
-Receiving information: {"username":"wefwefwefef","password":"wefwefwefwefwefwefwefewf1"} from the queue: greetings 
+{
+    "data": {
+        "$metadata": {
+            "httpStatusCode": 200,
+            "requestId": "183A3AB975630C71",
+            "extendedRequestId": "dd9025bab4ad464b049177c95eb6ebf374d3b3fd1af9251148b658df7ac2e3e8",
+            "attempts": 1,
+            "totalRetryDelay": 0
+        },
+        "ETag": "\"d7d87805c2366c945f3b9a46ca85f30f\"",
+        "ChecksumCRC32": "j1LeMw==",
+        "Bucket": "storage",
+        "Key": "imav9fzzj4a.yaml",
+        "Location": "http://localhost:9000/storage/imav9fzzj4a.yaml"
+    }
+}
 ```
 
-Очередь сообщений при этом будет пуста
-
-![](https://storage.yandexcloud.net/shesterikov/WP/WP_8_8.png)
-
+6. Убедитесь в существовании нового файла в MinIO, перейдя в соответствующий [бакет](http://localhost:9001/browser/storage)
+![](https://storage.yandexcloud.net/shesterikov/WP/WP_7_10.png)
 
 7. Модифицируйте исходный код приложения в соответствии со следующими требованиями:
 
-  - Требуется реализовать асинхронную обработку события "регистрация нового пользователя" и отправку приветственного сообщения на `email` пользователя посредством сервиса `greeting_service`, протокола SMTP и зависимости [Nodemailer](https://www.npmjs.com/package/nodemailer):
+- Требуется реализовать хранение следующей метаинформации о файле: 
 
-    a. Модифицируйте отправляемые и получаемые данные из очереди для передачи требуемых для отправки писем полей (`email` пользователя)
+  a. идентификатор файла в СУБД `id` (поле должно представлять собой случайно сгенерированную строку или UUID)
 
-    b. Настройте почту для работы по протоколу SMTP (пример настройки для [Яндекс.Почты](https://yandex.ru/support/yandex-360/customers/mail/ru/mail-clients/others) и [Gmail](https://support.google.com/a/answer/176600?hl=en))
+  b. идентификатор файла в MinIO `key`
 
-    c. Модифицируйте файл `greeting_service/src/mail/index.js`, добавив отправку писем посредством [Nodemailer](https://www.npmjs.com/package/nodemailer)
+  c. оригинальное название файла `original_name` 
+
+  d. размер файла `size` [опционально], 
+
+  e. наименование бакета, в котором располагается файл `bucket` 
+
+  f. идентификатор пользователя, загрузившего файл `user_id` 
+
+  g. идентификатор связанной сущности `entity_id`
+
+  h. Mime type `mime_type`;
+
+Для получения данной информации предполагается использование библиотеки [fastify-multipart](https://github.com/fastify/fastify-multipart) и данных, полученных из MinIO после завершения загрузки
+
+- Требуется реализовать [связку модели](https://sequelize.org/docs/v6/core-concepts/assocs/) с мета информацией о файле с моделью вашей предметной области и моделью пользователя;
+
+- Требуется изменить ендпоинт `POST /files`:
+
+  a. при сохранении файла поместив метаинформацию о сохранненном файле в созданную модель файла
+
+  b. модифицировав возвращаемые данные в соответствии с примером ниже
+  ```
+  {
+    "id": "a8f6b440-1929-4953-9d16-2dda56ed0377",
+    "key": "imav9fzzj4a.yaml",
+    "mime_type": "text/yaml",
+    "url": "http://localhost:3000/files/a8f6b440-1929-4953-9d16-2dda56ed0377",
+  }
+  ```
+
+- Требуется реализовать ендпоинт `GET /files/:fileId`:
+
+  a. Выполнив предварительную проверку наличия записи о файле в СУБД по `fileId` (id)
+
+  b. Выполнив пересылку данных файла с помощью Stream клиенту
+
+- Требуется модифицировать ендпоинты создания и обновления сущностей предметной области:
+
+  a.добавив поддержку поля `fileId`
+
+  Ниже представлен пример такого запроса
+  ```
+  curl --location 'localhost:3000/pokemons' \
+  --header 'accept: application/json' \
+  --header 'Content-Type: application/json' \
+  --data '{
+      "name": "Snorlax",
+      "fileId": "a8f6b440-1929-4953-9d16-2dda56ed0377"
+  }'
+  ```
+
+  b. добавив возврат поля `fileUrl`, с которого можно произвести скачивание файла. Обратите внимание, MinIO адрес в данном случае не должен фигурировать как URL адрес. Запросы к MinIO должны проксироваться через API.
+
 
 ### Документация:
 
-[Nodemailer](https://nodemailer.com/)
+[MinIO](https://github.com/minio/minio)
 
-[RabbitMQ](https://www.rabbitmq.com/tutorials)
+[Node.js Streams для чайников или как работать с потоками](https://habr.com/ru/articles/479048/)
+
+[@fastify/multipart](https://github.com/fastify/fastify-multipart)
+
+[Defining the Sequelize associations](https://sequelize.org/docs/v6/core-concepts/assocs/)
 
 ### Контрольные вопросы:
-1. Что такое RabbitQM? Хранит ли RabbitQM очереди в случае отключения?
+1. Что такое MinIO? Какие преимущества MinIO по сравнению с хранением файлов в локальной файловой системе?
 
-2. Что такое очередь сообщений? Какие задачи решаются посредством использования очередей сообщений?
+2. Что такое Stream? Какие виды Stream вы знаете? В чем преимущество использования Stream по сравнению с передачей файла через [Buffer](https://github.com/fastify/fastify-multipart?tab=readme-ov-file#usage)?
 
-3. Что такое SMTP? Какие настройки вы произвели в почтовом сервисе для работы с SMTP?
+3. Что такое Mime тип?
 
-4. Что такое Nodemailer?
+4. Для чего нужны `Access key` и `Secret key`?
